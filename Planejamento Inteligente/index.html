@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Planejamento Inteligente</title>
+    <link rel="stylesheet" href="css/estilo.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🛰️</text></svg>"
+    />
+  </head>
+  <body>
+    <div id="mapa">
+      <canvas id="tela"></canvas>
+      <canvas id="tela-antes" aria-hidden="true"></canvas>
+
+      <!-- ===================== COMPARAÇÃO ANTES / DEPOIS ===================== -->
+      <div id="comparador" hidden>
+        <div class="linha-corte"></div>
+        <span class="rotulo-lado antes">Antes</span>
+        <span class="rotulo-lado depois">Depois</span>
+        <button class="alca" id="alca-comparador" aria-label="Arrastar para comparar antes e depois">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path d="M9 6 3 12l6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- ===================== BARRA SUPERIOR ===================== -->
+      <header id="barra" class="cartao">
+        <div class="marca">🛰️ <span>Planejamento Inteligente</span></div>
+
+        <nav class="menus">
+          <!-- ---------- Cidade ---------- -->
+          <div class="menu" data-menu="cidade">
+            <button class="gatilho">Cidade <i>▾</i></button>
+            <div class="popover">
+              <label class="campo">
+                <span>Planejamento <b id="v-aderencia">70%</b></span>
+                <input id="in-aderencia" type="range" min="0" max="100" value="70" />
+              </label>
+              <p class="dica" style="margin: -6px 0 12px">
+                100% distribui os lugares seguindo a nota; 0% espalha tudo ao acaso.
+              </p>
+              <div class="linha">
+                <label class="campo">
+                  <span>Lugares <b id="v-pontos">45</b></span>
+                  <input id="in-pontos" type="range" min="8" max="120" value="45" />
+                </label>
+                <label class="campo">
+                  <span>Semente</span>
+                  <input id="in-seed" type="number" value="2026" />
+                </label>
+              </div>
+              <div class="linha">
+                <label class="campo">
+                  <span>Tamanho da quadra <b id="v-afastamento">1.0×</b></span>
+                  <input id="in-afastamento" type="range" min="70" max="200" value="100" />
+                </label>
+                <label class="campo">
+                  <span>Densidade de ruas <b id="v-densidade">0.80</b></span>
+                  <input id="in-densidade" type="range" min="0" max="150" value="80" />
+                </label>
+              </div>
+              <div class="linha">
+                <label class="campo">
+                  <span>Mão única <b id="v-mao">30%</b></span>
+                  <input id="in-mao" type="range" min="0" max="90" value="30" />
+                </label>
+                <label class="campo">
+                  <span>Presídios</span>
+                  <input id="in-presidios" type="number" min="0" max="6" value="1" />
+                </label>
+              </div>
+              <label class="campo">
+                <span>Circulação</span>
+                <select id="in-reparar">
+                  <option value="1" selected>Garantir ida e volta em toda a cidade</option>
+                  <option value="0">Deixar trechos sem retorno</option>
+                </select>
+              </label>
+              <button class="acao" id="btn-gerar">Gerar cidade</button>
+              <button class="acao secundaria" id="btn-exemplo">Centro de Belém (exemplo de 8 lugares)</button>
+              <p class="dica">
+                A malha é uma grade de quarteirões: menos densidade faz quadras maiores e ruas sem
+                saída. Mão única vale para a rua inteira e alterna de sentido entre ruas vizinhas.
+              </p>
+            </div>
+          </div>
+
+          <!-- ---------- Algoritmos ---------- -->
+          <div class="menu" data-menu="algoritmos">
+            <button class="gatilho">Algoritmos <i>▾</i></button>
+            <div class="popover largo">
+              <div class="lista-algoritmos">
+                <button data-acao="avaliacao">
+                  <span>Nota da cidade<small>Quatro eixos medidos pela distância</small></span>
+                </button>
+                <button data-acao="rota">
+                  <span>Caminho mínimo<small>Dijkstra ou Floyd-Warshall, pela distância</small></span>
+                </button>
+                <button data-acao="estruturas">
+                  <span>Estruturas de dados<small>Matrizes de adjacência e incidência desta cidade</small></span>
+                </button>
+                <hr />
+                <button data-acao="limpar">
+                  <span>Limpar realces do mapa</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <button id="btn-melhorar" class="botao-melhorar" title="Reposicionar os lugares para a melhor nota">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M3 17l6-6 4 4 8-8M15 7h6v6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Melhorar cidade</span>
+        </button>
+
+        <button id="chip-nota" title="Ver a nota da cidade">
+          <span class="conceito" id="hud-conceito">?</span>
+          <span>Nota <b id="hud-nota">—</b></span>
+        </button>
+      </header>
+
+      <!-- ===================== PAINEL DE RESULTADO ===================== -->
+      <aside id="painel" class="oculto">
+        <header>
+          <h2 id="painel-titulo">Resultado</h2>
+          <button id="fechar-painel" title="Fechar">✕</button>
+        </header>
+        <div id="resultado"></div>
+      </aside>
+
+      <!-- ===================== MATRIZES DO GRAFO ===================== -->
+      <section id="matrizes" class="cartao" hidden aria-labelledby="matrizes-titulo">
+        <header>
+          <div>
+            <h2 id="matrizes-titulo">Estruturas de dados</h2>
+            <p id="matriz-resumo"></p>
+          </div>
+          <button id="fechar-matrizes" title="Fechar">✕</button>
+        </header>
+        <div class="barra-matrizes">
+          <div class="abas" role="tablist" aria-label="Representação do grafo">
+            <button role="tab" data-aba="adjacencia">Matriz de adjacência</button>
+            <button role="tab" data-aba="incidencia">Matriz de incidência</button>
+          </div>
+          <label id="matriz-valores" class="campo-inline">
+            <span>Células</span>
+            <select id="in-valores-matriz">
+              <option value="binario">0 e 1</option>
+              <option value="distancia">distância em km</option>
+            </select>
+          </label>
+        </div>
+        <div id="matriz-rolagem" tabindex="0"></div>
+        <p id="matriz-dica"></p>
+      </section>
+
+      <!-- ===================== FLUTUANTES ===================== -->
+      <div id="info-cidade" class="cartao">
+        <span class="nome" id="hud-nome">—</span>
+        <span class="metrica">|V| <b id="hud-v">0</b></span>
+        <span class="metrica">|A| <b id="hud-a">0</b></span>
+        <span class="metrica">ruas <b id="hud-r">0</b></span>
+      </div>
+
+      <div id="legenda" class="cartao">
+        <h4>Legenda <span id="alternar-legenda">▾</span></h4>
+        <div class="corpo">
+          <div id="legenda-itens"></div>
+          <div class="vias">
+            <span><i style="height: 6px"></i>Rodovia</span>
+            <span><i style="height: 4px"></i>Avenida</span>
+            <span><i style="height: 3px"></i>Travessa</span>
+            <span><i style="height: 2px"></i>Rua</span>
+          </div>
+          <div class="rodape">➤ seta = rua de mão única</div>
+        </div>
+      </div>
+
+      <div id="zoom" class="cartao">
+        <button id="btn-mais" title="Aproximar">+</button>
+        <button id="btn-menos" title="Afastar">−</button>
+        <button id="btn-enquadrar" title="Enquadrar a cidade">⤢</button>
+      </div>
+
+      <div id="cartao" class="cartao">
+        <h3 id="cartao-nome"></h3>
+        <div class="tipo" id="cartao-tipo"></div>
+        <dl id="cartao-dados"></dl>
+      </div>
+
+      <div id="carregando">
+        <div class="caixa">
+          <div class="girando"></div>
+          <span id="carregando-texto">Gerando cidade…</span>
+        </div>
+      </div>
+
+      <div id="aviso"></div>
+    </div>
+
+    <!-- Ordem importa: modelo -> grafo -> algoritmos -> gerador -> nota -> tela -->
+    <script src="js/modelo.js"></script>
+    <script src="js/grafo.js"></script>
+    <script src="js/caminhos.js"></script>
+    <script src="js/conexidade.js"></script>
+    <script src="js/usoDoSolo.js"></script>
+    <script src="js/gerador.js"></script>
+    <script src="js/nota.js"></script>
+    <script src="js/otimizador.js"></script>
+    <script src="js/servico.js"></script>
+    <script src="js/satelite.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

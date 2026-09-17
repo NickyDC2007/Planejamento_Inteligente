@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Testes — Planejamento Inteligente</title>
+    <link rel="stylesheet" href="css/estilo.css" />
+    <style>
+      html,
+      body {
+        overflow: auto;
+        background: var(--superficie);
+      }
+      main {
+        max-width: 860px;
+        margin: 32px auto;
+        padding: 0 20px;
+      }
+      h1 {
+        font-size: 22px;
+        font-weight: 500;
+        margin: 0 0 4px;
+      }
+      .resumo {
+        color: var(--texto-fraco);
+        margin: 0 0 20px;
+      }
+      .placar {
+        display: inline-flex;
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+      }
+      .placar.ok {
+        background: #e6f4ea;
+        color: var(--verde);
+      }
+      .placar.falha {
+        background: #fce8e6;
+        color: var(--vermelho);
+      }
+      ol {
+        list-style: none;
+        margin: 0;
+        padding: 6px 0;
+      }
+      li {
+        display: grid;
+        grid-template-columns: 66px 1fr;
+        gap: 12px;
+        padding: 8px 18px;
+        border-bottom: 1px solid var(--borda-suave);
+        font-size: 13px;
+      }
+      li:last-child {
+        border-bottom: none;
+      }
+      li small {
+        display: block;
+        color: var(--texto-leve);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Testes de correção — Planejamento Inteligente</h1>
+      <p class="resumo">
+        Cada algoritmo é comparado com uma verificação independente, em cinco cidades; a malha
+        é conferida (nenhuma rua cruzando outra fora de uma esquina, no máximo 6 ruas por
+        esquina) e o botão "Melhorar cidade" nunca piora a nota nem some com lugares.
+      </p>
+      <p id="placar" class="placar">Rodando…</p>
+      <ol id="lista" class="cartao"></ol>
+    </main>
+
+    <script src="js/modelo.js"></script>
+    <script src="js/grafo.js"></script>
+    <script src="js/caminhos.js"></script>
+    <script src="js/conexidade.js"></script>
+    <script src="js/usoDoSolo.js"></script>
+    <script src="js/gerador.js"></script>
+    <script src="js/nota.js"></script>
+    <script src="js/otimizador.js"></script>
+    <script src="js/testes.js"></script>
+    <script>
+      setTimeout(() => {
+        const r = rodarTestes();
+        const passaram = r.filter((t) => t.ok).length;
+        const placar = document.getElementById("placar");
+        placar.textContent = `${passaram} de ${r.length} verificações passaram`;
+        placar.classList.add(passaram === r.length ? "ok" : "falha");
+        document.getElementById("lista").innerHTML = r
+          .map(
+            (t) => `<li><span class="etiqueta ${t.ok ? "ok" : "ruim"}">${t.ok ? "passou" : "falhou"}</span>
+              <span>${t.titulo}${!t.ok && t.detalhe ? `<small>${t.detalhe}</small>` : ""}</span></li>`
+          )
+          .join("");
+      }, 30);
+    </script>
+  </body>
+</html>
